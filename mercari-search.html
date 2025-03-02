@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メルカリ自動検索ツール</title>
+    <style>
+        :root {
+            --primary: #ff0211;
+            --primary-light: #ffccd0;
+            --secondary: #4b4b4b;
+            --background: #f5f5f5;
+            --white: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', sans-serif;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--secondary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .app-container {
+            background-color: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px var(--shadow);
+            width: 100%;
+            max-width: 600px;
+            overflow: hidden;
+        }
+        
+        .app-header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .app-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .app-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .app-logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .search-form {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--secondary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        
+        .checkbox-group {
+            margin: 25px 0;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+        
+        .price-range {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .price-range input {
+            flex: 1;
+        }
+        
+        .price-range span {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+        
+        .btn {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            padding: 15px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+            margin-top: 30px;
+            box-shadow: 0 4px 6px rgba(255, 2, 17, 0.2);
+        }
+        
+        .btn:hover {
+            background-color: #e00000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(255, 2, 17, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(255, 2, 17, 0.2);
+        }
+        
+        .settings-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            color: var(--white);
+            font-size: 1.3rem;
+        }
+        
+        .email-settings {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            display: none;
+        }
+        
+        .status.running {
+            display: block;
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status.error {
+            display: block;
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin-left: 10px;
+        }
+        
+        .toggle-switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-label {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <h1>メルカリ自動検索ツール</h1>
+            <p>検索条件を設定して自動検索・スクリーンショット・メール送信</p>
+        </div>
+        
+        <div class="search-form">
+            <div class="form-group">
+                <label for="search-keyword">検索キーワード</label>
+                <input type="text" id="search-keyword" class="form-control" placeholder="例: オタ活ウサギ" value="オタ活ウサギ">
+            </div>
+            
+            <div class="checkbox-group">
+                <label>商品の状態</label>
+                <div class="checkbox-container">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="condition-new" checked>
+                        <label for="condition-new">新品、未使用</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="condition-like-new" checked>
+                        <label for="condition-like-new">未使用に近い</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="condition-good" checked>
+                        <label for="condition-good">目立った傷や汚れなし</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="condition-acceptable">
+                        <label for="condition-acceptable">やや傷や汚れあり</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="condition-poor">
+                        <label for="condition-poor">傷や汚れあり</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="checkbox-group">
+                <label>配送料の負担</label>
+                <div class="checkbox-container">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="shipping-included" checked>
+                        <label for="shipping-included">送料込み(出品者負担)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="shipping-collect">
+                        <label for="shipping-collect">着払い(購入者負担)</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="price-min">価格範囲（円）</label>
+                <div class="price-range">
+                    <input type="number" id="price-min" class="form-control" placeholder="下限" value="3500">
+                    <span>～</span>
+                    <input type="number" id="price-max" class="form-control" placeholder="上限">
+                </div>
+            </div>
+            
+            <div class="email-settings">
+                <div class="form-group">
+                    <label for="email-to">メール送信先</label>
+                    <input type="email" id="email-to" class="form-control" placeholder="例: example@gmail.com" value="dragonrondo@gmail.com">
+                </div>
+                
+                <div class="toggle-container">
+                    <span class="toggle-label">自動メール送信:</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <button id="start-search" class="btn">検索を実行</button>
+            
+            <div id="status" class="status">
+                <div class="spinner"></div>
+                <span>検索を実行中です...</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('start-search').addEventListener('click', function() {
+            // フォームデータの取得
+            const keyword = document.getElementById('search-keyword').value;
+            const priceMin = document.getElementById('price-min').value;
+            const priceMax = document.getElementById('price-max').value;
+            const emailTo = document.getElementById('email-to').value;
+            
+            // 状態チェックボックスの処理
+            const conditions = [];
+            if (document.getElementById('condition-new').checked) conditions.push('新品、未使用');
+            if (document.getElementById('condition-like-new').checked) conditions.push('未使用に近い');
+            if (document.getElementById('condition-good').checked) conditions.push('目立った傷や汚れなし');
+            if (document.getElementById('condition-acceptable').checked) conditions.push('やや傷や汚れあり');
+            if (document.getElementById('condition-poor').checked) conditions.push('傷や汚れあり');
+            
+            // 配送料のチェックボックス処理
+            const shipping = [];
+            if (document.getElementById('shipping-included').checked) shipping.push('送料込み');
+            if (document.getElementById('shipping-collect').checked) shipping.push('着払い');
+            
+            // ステータス表示の更新
+            const statusElement = document.getElementById('status');
+            statusElement.className = 'status running';
+            
+            // 実際のアプリではここでPowerShellスクリプトを呼び出す
+            console.log('検索パラメータ:', {
+                keyword,
+                priceMin,
+                priceMax,
+                conditions,
+                shipping,
+                emailTo
+            });
+            
+            // デモ用の疑似処理
+            setTimeout(() => {
+                statusElement.innerHTML = '<span>検索が完了しました！メールが送信されました。</span>';
+                statusElement.className = 'status running';
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 3000);
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
